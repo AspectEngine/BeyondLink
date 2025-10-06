@@ -9,6 +9,7 @@
 
 #include "../include/LaserRenderer.h"
 #include <d3dcompiler.h>
+#include <dxgi.h>
 #include <iostream>
 #include <vector>
 
@@ -378,7 +379,10 @@ bool LaserRenderer::CreateSourceResources(int deviceID) {
     texDesc.SampleDesc.Count = 1;
     texDesc.Usage = D3D11_USAGE_DEFAULT;
     texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    texDesc.MiscFlags = m_Settings.EnableMipmaps ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0;
+    // 添加 D3D11_RESOURCE_MISC_SHARED 以支持UE纹理共享
+    texDesc.MiscFlags = m_Settings.EnableMipmaps ? 
+        (D3D11_RESOURCE_MISC_GENERATE_MIPS | D3D11_RESOURCE_MISC_SHARED) : 
+        D3D11_RESOURCE_MISC_SHARED;
 
     HRESULT hr = m_Device->CreateTexture2D(&texDesc, nullptr, &resources.Texture);
     if (FAILED(hr)) {
@@ -563,6 +567,62 @@ ID3D11ShaderResourceView* LaserRenderer::GetLaserTexture(int deviceID) {
         return it->second.SRV;
     }
     return nullptr;
+}
+
+//==========================================================================
+// 函数：GetLaserTextureRaw
+// 描述：获取指定设备的原始D3D11纹理对象（用于UE纹理共享）
+// 参数：
+//   deviceID - 设备ID
+// 返回值：
+//   ID3D11Texture2D* - 纹理对象指针，失败返回nullptr
+//==========================================================================
+ID3D11Texture2D* LaserRenderer::GetLaserTextureRaw(int deviceID) {
+    auto it = m_SourceResources.find(deviceID);
+    if (it != m_SourceResources.end()) {
+        return it->second.Texture;
+    }
+    return nullptr;
+}
+
+//==========================================================================
+// 函数：GetSharedTextureHandle
+// 描述：获取指定设备纹理的共享句柄，用于跨D3D设备共享
+// 参数：
+//   deviceID - 设备ID
+// 返回值：
+//   HANDLE - 共享句柄，失败返回nullptr
+// 实现细节：
+//   1. 查询IDXGIResource接口
+//   2. 调用GetSharedHandle获取句柄
+//   3. 此句柄可在UE的D3D设备中通过OpenSharedResource打开
+//==========================================================================
+HANDLE LaserRenderer::GetSharedTextureHandle(int deviceID) {
+    auto it = m_SourceResources.find(deviceID);
+    if (it == m_SourceResources.end()) {
+        return nullptr;
+    }
+    
+    // 查询DXGI资源接口
+    IDXGIResource* dxgiResource = nullptr;
+    HRESULT hr = it->second.Texture->QueryInterface(__uuidof(IDXGIResource), 
+                                                     (void**)&dxgiResource);
+    if (FAILED(hr)) {
+        std::cerr << "Failed to query IDXGIResource interface: " << std::hex << hr << std::endl;
+        return nullptr;
+    }
+    
+    // 获取共享句柄
+    HANDLE sharedHandle = nullptr;
+    hr = dxgiResource->GetSharedHandle(&sharedHandle);
+    dxgiResource->Release();
+    
+    if (FAILED(hr)) {
+        std::cerr << "Failed to get shared handle: " << std::hex << hr << std::endl;
+        return nullptr;
+    }
+    
+    return sharedHandle;
 }
 
 } // namespace BeyondLink

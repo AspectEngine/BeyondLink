@@ -742,6 +742,73 @@ void Release();                               // 释放资源
 
 ---
 
+## 🧪 单元测试
+
+BeyondLink 提供完整的C API单元测试套件，确保所有功能正常工作。
+
+### 测试覆盖
+
+- ✅ **23个测试用例**覆盖所有C API函数
+- ✅ 生命周期管理、网络控制、配置接口
+- ✅ 纹理访问（UE集成关键功能）
+- ✅ 多设备支持、异常处理
+
+### 快速测试
+
+```bash
+# 方法1：使用批处理脚本（推荐）
+cd Test
+RunTest.bat
+
+# 方法2：手动编译
+cl /std:c++17 /EHsc /I"include" Test\BeyondLinkCAPI_Test.cpp /link Build\Binaries\Release\BeyondLink.lib
+```
+
+详细说明请参见：**[Test/README_TEST.md](Test/README_TEST.md)**
+
+---
+
+## 🎮 虚幻引擎集成
+
+BeyondLink 现已支持虚幻引擎5.6+集成！通过C API和D3D11纹理共享技术，您可以在UE中实时显示Beyond激光数据。
+
+### 快速集成
+
+1. **编译静态库**：将项目配置改为静态库(.lib)
+2. **拷贝文件**：将头文件、.lib和DLL拷贝到UE插件的ThirdParty目录
+3. **链接库**：在.Build.cs中配置依赖
+4. **使用C API**：通过 `BeyondLinkCAPI.h` 调用功能
+
+### 核心接口
+
+```cpp
+// 创建系统
+BeyondLinkHandle handle = BeyondLink_Create();
+BeyondLink_Initialize(handle);
+BeyondLink_StartNetwork(handle, nullptr);
+
+// 每帧更新
+BeyondLink_Update(handle);
+BeyondLink_Render(handle);
+
+// 获取共享纹理句柄（零拷贝）
+void* sharedHandle = BeyondLink_GetSharedHandle(handle, deviceID);
+// 在UE中：ID3D11Device::OpenSharedResource(sharedHandle, ...)
+```
+
+### 详细文档
+
+完整的UE集成指南请参见：**[UE_INTEGRATION.md](UE_INTEGRATION.md)**
+
+包含：
+- ✅ 完整的插件创建步骤
+- ✅ D3D11纹理共享实现代码
+- ✅ 多线程安全最佳实践
+- ✅ 常见问题排查
+- ✅ 性能优化建议
+
+---
+
 ## 📄 许可证
 
 本项目仅供学习和研究使用。

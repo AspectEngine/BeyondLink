@@ -3,8 +3,12 @@
 // 文件：Main.cpp
 // 作者：Yunsio
 // 日期：2025-10-06
-// 描述：主程序入口点，初始化系统、创建显示窗口、处理设备切换和渲染循环
+// 描述：独立应用程序入口点（可选）
+//      仅在BUILD_STANDALONE_TEST定义时编译
+//      用于测试BeyondLink功能，UE集成时不需要
 //==============================================================================
+
+#ifdef BUILD_STANDALONE_TEST
 
 #include "../include/BeyondLink.h"
 #include "../include/LaserWindow.h"
@@ -39,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //==========================================================================
     // 步骤1: 创建激光系统配置
     // 配置参数说明：
-    //   MaxLaserDevices = 4        - 最多支持4台激光设备（0-3）
+    //   MaxLaserDevices = 8        - 最多支持8台激光设备（0-7）
     //   NetworkPort = 5568         - UDP接收端口（Beyond默认端口）
     //   TextureSize = 1024         - 激光纹理分辨率（1024x1024）
     //   ScannerSimulation = true   - 启用扫描仪模拟（插值、平滑、淡化）
@@ -48,7 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //   VelocitySmoothing = 0.83   - 速度平滑系数（0-1，越大越平滑）
     //==========================================================================
     Core::LaserSettings settings;
-    settings.MaxLaserDevices = 4;
+    settings.MaxLaserDevices = 8;
     settings.NetworkPort = 5568;
     settings.TextureSize = 1024;
     settings.ScannerSimulation = true;
@@ -107,7 +111,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::cout << "Waiting for data from Beyond software..." << std::endl;
     std::cout << std::endl;
     std::cout << "Controls:" << std::endl;
-    std::cout << "  0-3 - Switch between laser devices (0=Device 1, 1=Device 2, etc.)" << std::endl;
+    std::cout << "  0-7 - Switch between laser devices (0=Device 1, 1=Device 2, etc.)" << std::endl;
     std::cout << "  ESC - Exit" << std::endl;
     std::cout << "  Close Window - Exit" << std::endl;
     std::cout << std::endl;
@@ -128,19 +132,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int currentDevice = 0;  // 当前显示的设备（0-3）
     
     std::cout << "=== Device Control ===" << std::endl;
-    std::cout << "  Press 0-3 to switch between laser devices" << std::endl;
+    std::cout << "  Press 0-7 to switch between laser devices" << std::endl;
     std::cout << "  Currently viewing Device " << currentDevice << std::endl;
     std::cout << std::endl;
 
     while (!window.ShouldClose()) {
         // ----- 设备切换逻辑 -----
         // 使用PeekMessage检查键盘消息，而不阻塞主循环
-        // 0-3键对应设备0-3（Beyond的4个输出设备）
+        // 0-7键对应设备0-7（Beyond的8个输出设备）
         MSG msg = {};
         while (PeekMessage(&msg, window.GetHWND(), 0, 0, PM_NOREMOVE)) {
             if (msg.message == WM_KEYDOWN) {
-                // 检测0-3键（ASCII码：'0'=48, '3'=51）
-                if (msg.wParam >= '0' && msg.wParam <= '3') {
+                // 检测0-7键（ASCII码：'0'=48, '7'=55）
+                if (msg.wParam >= '0' && msg.wParam <= '7') {
                     int newDevice = static_cast<int>(msg.wParam - '0');
                     if (newDevice != currentDevice) {
                         currentDevice = newDevice;
@@ -198,7 +202,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // ----- 显示所有设备的状态 -----
             // 格式：[OK] 有数据   [--] 无数据   >>> 当前查看的设备
             std::cout << "\nAll Devices Status:" << std::endl;
-            for (int dev = 0; dev < 4; ++dev) {
+            for (int dev = 0; dev < 8; ++dev) {
                 auto source = system.GetLaserSource(dev);
                 size_t points = source ? source->GetPointCount() : 0;
                 
@@ -264,6 +268,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return -1;
     }
 }
+
+#else // !BUILD_STANDALONE_TEST
+
+//==============================================================================
+// UE集成模式 - 不需要独立应用程序
+// 使用 BeyondLinkCAPI.h 中的C接口集成到虚幻引擎
+//==============================================================================
+
+int main() {
+    // 空实现 - 仅用于静态库编译
+    return 0;
+}
+
+#endif // BUILD_STANDALONE_TEST
 
 //==============================================================================
 // End of Main.cpp

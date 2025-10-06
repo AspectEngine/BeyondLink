@@ -510,8 +510,8 @@ bool LaserProtocol::ParsePacket(const uint8_t* data, size_t length,
     std::vector<uint8_t> dataCopy(data, data + length);
     m_ReadLaserData(dataCopy.data(), static_cast<int>(length));
     
-    // 使用从网络层提取的设备 ID
-    if (extractedDeviceID >= 0 && extractedDeviceID < 4) {
+        // 使用从网络层提取的设备 ID
+    if (extractedDeviceID >= 0 && extractedDeviceID < 8) {
         int pointCount = 0;
         void* pointDataPtr = m_GetData(extractedDeviceID, &pointCount);
         
