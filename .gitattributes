@@ -1,0 +1,128 @@
+# ==============================================================================
+# BeyondLink - Git 属性配置
+# ==============================================================================
+
+# 自动检测文本文件并标准化行尾
+* text=auto
+
+# ==============================================================================
+# 源代码文件
+# ==============================================================================
+
+# C++ 源文件
+*.cpp text eol=crlf
+*.h text eol=crlf
+*.hpp text eol=crlf
+*.c text eol=crlf
+*.cc text eol=crlf
+*.cxx text eol=crlf
+*.hxx text eol=crlf
+*.inl text eol=crlf
+
+# HLSL 着色器
+*.hlsl text eol=crlf
+*.fx text eol=crlf
+*.fxh text eol=crlf
+
+# ==============================================================================
+# 项目文件
+# ==============================================================================
+
+# Visual Studio 解决方案和项目文件
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.vcxproj.user text eol=crlf
+
+# ==============================================================================
+# 脚本和配置文件
+# ==============================================================================
+
+# 批处理和 PowerShell
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Shell 脚本
+*.sh text eol=lf
+
+# 配置文件
+*.config text eol=crlf
+*.ini text eol=crlf
+*.xml text eol=crlf
+*.json text eol=crlf
+*.yaml text eol=crlf
+*.yml text eol=crlf
+
+# ==============================================================================
+# 文档文件
+# ==============================================================================
+
+*.md text eol=crlf
+*.txt text eol=crlf
+*.rtf text eol=crlf
+
+# ==============================================================================
+# 二进制文件
+# ==============================================================================
+
+# 可执行文件和库
+*.exe binary
+*.dll binary
+*.lib binary
+*.so binary
+*.dylib binary
+*.a binary
+
+# 图像文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.tga binary
+*.dds binary
+
+# 音频和视频
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.mp4 binary
+*.avi binary
+
+# 字体
+*.ttf binary
+*.otf binary
+
+# 压缩文件
+*.zip binary
+*.7z binary
+*.rar binary
+*.tar binary
+*.gz binary
+
+# 其他二进制格式
+*.pdb binary
+*.obj binary
+*.o binary
+
+# ==============================================================================
+# Git LFS（如果需要大文件支持）
+# ==============================================================================
+
+# 取消注释以下行以启用 Git LFS（需要先安装 git-lfs）
+# *.dll filter=lfs diff=lfs merge=lfs -text
+# *.pdb filter=lfs diff=lfs merge=lfs -text
+# *.exe filter=lfs diff=lfs merge=lfs -text
+
+# ==============================================================================
+# 差异和合并设置
+# ==============================================================================
+
+# 不对以下文件进行差异比较
+*.dll -diff
+*.exe -diff
+*.pdb -diff
+*.lib -diff
+
