@@ -3,16 +3,38 @@
 // 文件：Main.cpp
 // 作者：Yunsio
 // 日期：2025-10-06
+// 版本：v1.5.0
 // 描述：主程序入口点，初始化系统、创建显示窗口、处理设备切换和渲染循环
 //==============================================================================
 
-#include "../include/BeyondLink.h"
-#include "../include/LaserWindow.h"
+#include "BeyondLink.h"
+#include "LaserWindow.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <sstream>
 
 using namespace BeyondLink;
+
+// 版本信息宏（由 CMake 定义）
+#ifndef BEYONDLINK_VERSION_MAJOR
+#define BEYONDLINK_VERSION_MAJOR 1
+#endif
+#ifndef BEYONDLINK_VERSION_MINOR
+#define BEYONDLINK_VERSION_MINOR 5
+#endif
+#ifndef BEYONDLINK_VERSION_PATCH
+#define BEYONDLINK_VERSION_PATCH 0
+#endif
+
+// 获取版本字符串
+std::string GetVersionString() {
+    std::ostringstream oss;
+    oss << "v" << BEYONDLINK_VERSION_MAJOR << "." 
+        << BEYONDLINK_VERSION_MINOR << "." 
+        << BEYONDLINK_VERSION_PATCH;
+    return oss.str();
+}
 
 //==========================================================================
 // 函数：WinMain
@@ -37,9 +59,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     try {
 
     //==========================================================================
+    // 输出版本信息和标题
+    //==========================================================================
+    std::string version = GetVersionString();
+    std::cout << "========================================" << std::endl;
+    std::cout << "  BeyondLink " << version << std::endl;
+    std::cout << "  Beyond Laser Visualization System" << std::endl;
+    std::cout << "========================================" << std::endl;
+    std::cout << std::endl;
+
+    //==========================================================================
     // 步骤1: 创建激光系统配置
     // 配置参数说明：
-    //   MaxLaserDevices = 4        - 最多支持4台激光设备（0-3）
+    //   MaxLaserDevices = 9        - 最多支持9台激光设备（1-9）
     //   NetworkPort = 5568         - UDP接收端口（Beyond默认端口）
     //   TextureSize = 1024         - 激光纹理分辨率（1024x1024）
     //   ScannerSimulation = true   - 启用扫描仪模拟（插值、平滑、淡化）
@@ -48,7 +80,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //   VelocitySmoothing = 0.83   - 速度平滑系数（0-1，越大越平滑）
     //==========================================================================
     Core::LaserSettings settings;
-    settings.MaxLaserDevices = 4;
+    settings.MaxLaserDevices = 9;
     settings.NetworkPort = 5568;
     settings.TextureSize = 1024;
     settings.ScannerSimulation = true;
@@ -72,9 +104,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     //==========================================================================
     // 步骤3: 创建512x512显示窗口（共享D3D设备）
-    // 默认显示设备0，窗口标题会在设备切换时动态更新
+    // 默认显示设备1，窗口标题会在设备切换时动态更新
     //==========================================================================
-    LaserWindow window(512, 512, "Beyond Laser Visualization - Device 0");
+    std::string windowTitle = "BeyondLink " + version + " - Device 1";
+    LaserWindow window(512, 512, windowTitle);
     if (!window.Initialize(system.GetRenderer()->GetDevice(), 
                           system.GetRenderer()->GetContext())) {
         std::cerr << "Failed to initialize display window" << std::endl;
@@ -91,7 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // 功能：
     //   - 初始化Winsock
     //   - 创建UDP Socket并绑定到5568端口
-    //   - 加入155个多播组（设备0-4，子网0-30）
+    //   - 加入279个多播组（设备1-9，子网0-30）
     //   - 启动接收线程
     //==========================================================================
     if (!system.StartNetworkReceiver()) {
@@ -107,7 +140,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::cout << "Waiting for data from Beyond software..." << std::endl;
     std::cout << std::endl;
     std::cout << "Controls:" << std::endl;
-    std::cout << "  0-3 - Switch between laser devices (0=Device 1, 1=Device 2, etc.)" << std::endl;
+    std::cout << "  1-9 - Switch between laser devices" << std::endl;
     std::cout << "  ESC - Exit" << std::endl;
     std::cout << "  Close Window - Exit" << std::endl;
     std::cout << std::endl;
@@ -115,7 +148,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //==========================================================================
     // 主渲染循环
     // 循环流程：
-    //   1. 检查键盘输入（0-3键切换设备）
+    //   1. 检查键盘输入（1-9键切换设备）
     //   2. 处理窗口消息
     //   3. 更新所有激光源的点数据处理
     //   4. 渲染所有激光源到纹理
@@ -125,42 +158,55 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //==========================================================================
     auto lastStatsTime = std::chrono::steady_clock::now();
     int frameCount = 0;
-    int currentDevice = 0;  // 当前显示的设备（0-3）
+    int currentDevice = 0;  // 当前显示的设备索引（0-8，对应显示设备1-9）
     
     std::cout << "=== Device Control ===" << std::endl;
-    std::cout << "  Press 0-3 to switch between laser devices" << std::endl;
-    std::cout << "  Currently viewing Device " << currentDevice << std::endl;
+    std::cout << "  Press 1-9 to switch between laser devices" << std::endl;
+    std::cout << "  Currently viewing Device " << (currentDevice + 1) << std::endl;
     std::cout << std::endl;
 
     while (!window.ShouldClose()) {
-        // ----- 设备切换逻辑 -----
-        // 使用PeekMessage检查键盘消息，而不阻塞主循环
-        // 0-3键对应设备0-3（Beyond的4个输出设备）
-        MSG msg = {};
-        while (PeekMessage(&msg, window.GetHWND(), 0, 0, PM_NOREMOVE)) {
-            if (msg.message == WM_KEYDOWN) {
-                // 检测0-3键（ASCII码：'0'=48, '3'=51）
-                if (msg.wParam >= '0' && msg.wParam <= '3') {
-                    int newDevice = static_cast<int>(msg.wParam - '0');
-                    if (newDevice != currentDevice) {
-                        currentDevice = newDevice;
-                        // 输出切换提示（包含对应的多播地址）
-                        std::cout << "\n>>> Switched to Device " << currentDevice << " (Multicast: 239.255." 
-                                  << currentDevice << ".x) <<<\n" << std::endl;
-                        
-                        // 动态更新窗口标题
-                        std::string newTitle = "Beyond Laser Visualization - Device " + std::to_string(currentDevice);
-                        SetWindowTextA(window.GetHWND(), newTitle.c_str());
-                    }
-                }
-            }
-            break;  // 只检查一次，避免阻塞
-        }
-        
         // ----- 处理窗口消息 -----
         // 处理WM_QUIT、WM_CLOSE、WM_KEYDOWN(ESC)等消息
         if (!window.ProcessMessages()) {
-            break;  // 接收到退出消息
+            break;  // 接收到退出消息（WM_QUIT）
+        }
+        
+        // 再次检查窗口是否应该关闭（防止在消息处理后继续执行）
+        if (window.ShouldClose()) {
+            break;
+        }
+        
+        // ----- 设备切换逻辑 -----
+        // 使用 GetAsyncKeyState 直接检查键盘状态（不依赖消息队列）
+        // 1-9键对应设备1-9（Beyond的9个Fixture）
+        // 内部索引仍为0-8，显示时+1转换为1-9
+        // 使用静态变量防止按键重复触发
+        static bool keyPressed[9] = { false, false, false, false, false, false, false, false, false };
+        
+        for (int key = 1; key <= 9; ++key) {
+            // 检查 1-9 键是否被按下（虚拟键码：'1' = 0x31）
+            bool isKeyDown = (GetAsyncKeyState('0' + key) & 0x8000) != 0;
+            int deviceIndex = key - 1;  // 按键1对应索引0，按键2对应索引1，以此类推
+            
+            if (isKeyDown && !keyPressed[deviceIndex]) {
+                // 按键刚被按下（上次检查时未按下）
+                keyPressed[deviceIndex] = true;
+                
+                if (deviceIndex != currentDevice) {
+                    currentDevice = deviceIndex;
+                    // 输出切换提示（显示设备编号1-9，包含对应的多播地址）
+                    std::cout << "\n>>> Switched to Device " << (currentDevice + 1) << " (Multicast: 239.255." 
+                              << currentDevice << ".x) <<<\n" << std::endl;
+                    
+                    // 动态更新窗口基础标题（显示设备编号1-9和版本号）
+                    std::string newTitle = "BeyondLink " + version + " - Device " + std::to_string(currentDevice + 1);
+                    window.SetBaseTitle(newTitle);
+                }
+            } else if (!isKeyDown && keyPressed[deviceIndex]) {
+                // 按键被释放
+                keyPressed[deviceIndex] = false;
+            }
         }
 
         // ----- 更新阶段 -----
@@ -197,8 +243,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             
             // ----- 显示所有设备的状态 -----
             // 格式：[OK] 有数据   [--] 无数据   >>> 当前查看的设备
+            // 显示设备编号1-9（内部索引0-8）
             std::cout << "\nAll Devices Status:" << std::endl;
-            for (int dev = 0; dev < 4; ++dev) {
+            for (int dev = 0; dev < 9; ++dev) {
                 auto source = system.GetLaserSource(dev);
                 size_t points = source ? source->GetPointCount() : 0;
                 
@@ -206,7 +253,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 std::string indicator = (dev == currentDevice) ? ">>> " : "    ";
                 std::string status = (points > 0) ? "[OK]" : "[--]";
                 
-                std::cout << indicator << "Device " << dev << " (239.255." << dev << ".x): " 
+                // 显示设备编号为1-9（dev+1），多播地址使用内部索引（dev）
+                std::cout << indicator << "Device " << (dev + 1) << " (239.255." << dev << ".x): " 
                          << status << " " << points << " points";
                 
                 if (dev == currentDevice) {
@@ -224,9 +272,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 // 接收到数据，但当前设备没有点数据
                 auto currentSource = system.GetLaserSource(currentDevice);
                 if (!currentSource || currentSource->GetPointCount() == 0) {
-                    std::cout << "\n[!] WARNING: Device " << currentDevice << " has no data!" << std::endl;
+                    std::cout << "\n[!] WARNING: Device " << (currentDevice + 1) << " has no data!" << std::endl;
                     std::cout << "  Beyond may not be sending to 239.255." << currentDevice << ".x" << std::endl;
-                    std::cout << "  Check Beyond Zone/Device configuration." << std::endl;
+                    std::cout << "  Check Beyond Zone/Device configuration (Fixture " << (currentDevice + 1) << ")." << std::endl;
                 }
             }
             std::cout << "===================\n" << std::endl;

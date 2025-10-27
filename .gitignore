@@ -1,182 +1,49 @@
-# ==============================================================================
-# BeyondLink - Git 忽略文件配置
-# ==============================================================================
+# CMake 生成文件
+Build/CMake/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake
+!CMakeLists.txt
+!CMakePresets.json
 
-# Visual Studio 生成的文件和文件夹
-# ------------------------------------------------------------------------------
-
-# 用户特定文件
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# 用户特定文件（Rider）
-.idea/
-*.sln.iml
-
-# 编译结果
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
-# Visual Studio 2022 缓存/选项目录
+# Visual Studio 生成文件
+Build/*
 .vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.db
+*.opendb
+*.VC.db
 
-# MSTest 测试结果
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NUnit
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-
-# 编译输出
-*.obj
-*.ilk
+# 编译输出（但保留 DLL 依赖）
+*.exe
 *.pdb
-*.pgc
-*.pgd
-*.rsp
-*.sbr
-*.tlb
-*.tli
-*.tlh
-*.tmp
-*.tmp_proj
-*_wpftmp.csproj
+*.ilk
+*.obj
 *.log
 *.tlog
-*.vspscc
-*.vssscc
-.builds
-*.pidb
-*.svclog
-*.scc
+*.idb
+*.ipch
+*.lastbuildstate
+*.recipe
 
-# 浏览器数据库
-*.btp.cs
-*.btm.cs
-*.odx.cs
-*.xsd.cs
+# 不忽略必需的 DLL
+!bin/*.dll
 
-# IntelliSense 预编译头
-*.aps
-*.ncb
-*.opendb
-*.opensdf
-*.sdf
-*.cachefile
-*.VC.db
-*.VC.VC.opendb
-
-# Visual Studio 分析器
-*.psess
-*.vsp
-*.vspx
-*.sap
-
-# Visual Studio Trace Files
-*.e2e
-
-# ReSharper
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
-
-# Windows 图像文件缓存
-Thumbs.db
-ehthumbs.db
-
-# 文件夹配置文件
-Desktop.ini
-
-# 回收站
-$RECYCLE.BIN/
-
-# VS Code
+# IDE 配置
 .vscode/
-*.code-workspace
-
-# ==============================================================================
-# 项目特定配置
-# ==============================================================================
-
-# Build 目录（保留结构，忽略内容）
-Build/Binaries/
-Build/Intermediate/
-Build/Logs/
-
-# 临时文件
-*.bak
+.idea/
 *.swp
+*.swo
 *~
 
-# 编译器生成的汇编代码
-*.asm
-
-# ==============================================================================
-# 依赖库（根据需要调整）
-# ==============================================================================
-
-# DLL 文件通常应该提交到仓库（如果是必需的运行时依赖）
-# 如果 DLL 文件太大或有版权问题，可以取消下面的注释
-# bin/*.dll
-
-# vcpkg 安装的包（如果使用 vcpkg）
-vcpkg_installed/
-
-# ==============================================================================
-# 文档和生成的文件
-# ==============================================================================
-
-# Doxygen 生成的文档
-docs/html/
-docs/latex/
-
-# ==============================================================================
-# 操作系统特定
-# ==============================================================================
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Linux
-*~
-.directory
-
-# Windows
+# Windows 临时文件
 Thumbs.db
-ehthumbs.db
 Desktop.ini
-$RECYCLE.BIN/
-
-# ==============================================================================
-# 其他
-# ==============================================================================
-
-# 备份文件
-*.orig
-
-# Crash dumps
-*.dmp
-*.mdmp
-
-# 性能分析
-*.prof
-

@@ -7,7 +7,7 @@
 //       使用点图元拓扑、加法混合、无深度测试
 //==============================================================================
 
-#include "../include/LaserRenderer.h"
+#include "LaserRenderer.h"
 #include <d3dcompiler.h>
 #include <iostream>
 #include <vector>
@@ -536,16 +536,37 @@ void LaserRenderer::RenderSource(int deviceID, Core::LaserSource* source) {
 }
 
 void LaserRenderer::UploadVertexData(const std::vector<Core::LaserPoint>& points, 
-                                      ID3D11Buffer* vertexBuffer, 
+                                      ID3D11Buffer*& vertexBuffer, 
                                       size_t& bufferCapacity) {
     if (points.empty()) {
         return;
     }
 
-    // 如果缓冲区不够大，重新创建
+    // 如果缓冲区不够大，重新创建更大的缓冲区
     if (points.size() > bufferCapacity) {
-        bufferCapacity = points.size() + 500;
-        // TODO: 重新创建更大的缓冲区
+        // 计算新容量（增加余量避免频繁重建）
+        bufferCapacity = points.size() + 5000;
+        
+        // 释放旧缓冲区
+        if (vertexBuffer) {
+            vertexBuffer->Release();
+            vertexBuffer = nullptr;
+        }
+        
+        // 创建新的更大缓冲区
+        D3D11_BUFFER_DESC vbDesc = {};
+        vbDesc.Usage = D3D11_USAGE_DYNAMIC;
+        vbDesc.ByteWidth = static_cast<UINT>(bufferCapacity * sizeof(Core::LaserPoint));
+        vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        
+        HRESULT hr = m_Device->CreateBuffer(&vbDesc, nullptr, &vertexBuffer);
+        if (FAILED(hr)) {
+            std::cerr << "Failed to recreate vertex buffer with capacity: " << bufferCapacity << std::endl;
+            return;
+        }
+        
+        std::cout << "Expanded vertex buffer to capacity: " << bufferCapacity << " points" << std::endl;
     }
 
     // 映射缓冲区并上传数据

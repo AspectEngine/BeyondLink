@@ -7,7 +7,7 @@
 //       将激光纹理显示到屏幕，并计算FPS显示在标题栏
 //==============================================================================
 
-#include "../include/LaserWindow.h"
+#include "LaserWindow.h"
 #include <d3dcompiler.h>
 #include <iostream>
 
@@ -178,7 +178,10 @@ void LaserWindow::Shutdown() {
     }
 
     if (m_hWnd) {
-        DestroyWindow(m_hWnd);
+        // 只有当窗口仍然有效时才销毁（可能已经被 WM_CLOSE 销毁）
+        if (IsWindow(m_hWnd)) {
+            DestroyWindow(m_hWnd);
+        }
         m_hWnd = nullptr;
     }
 }
@@ -262,8 +265,10 @@ bool LaserWindow::CreateWindowHandle() {
 // 实现细节：
 //   1. 通过GWLP_USERDATA存储和检索LaserWindow对象指针
 //   2. 处理WM_CLOSE、WM_DESTROY、WM_KEYDOWN等消息
-//   3. ESC键触发窗口关闭
-//   4. 设备切换（0-3键）在Main.cpp的主循环中处理
+//   3. WM_CLOSE：设置标志并调用DestroyWindow销毁窗口
+//   4. WM_DESTROY：清空句柄并发送WM_QUIT到消息队列
+//   5. ESC键触发窗口关闭
+//   6. 设备切换（0-3键）在Main.cpp的主循环中处理
 //==========================================================================
 LRESULT CALLBACK LaserWindow::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     LaserWindow* window = nullptr;
@@ -282,12 +287,14 @@ LRESULT CALLBACK LaserWindow::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPA
     if (window) {
         switch (msg) {
             case WM_CLOSE:
-                // 用户点击关闭按钮
+                // 用户点击关闭按钮，设置标志并销毁窗口
                 window->m_ShouldClose = true;
+                DestroyWindow(hwnd);  // 立即销毁窗口，触发 WM_DESTROY
                 return 0;
 
             case WM_DESTROY:
-                // 窗口被销毁，发送退出消息
+                // 窗口被销毁，清空句柄并发送退出消息到消息队列
+                window->m_hWnd = nullptr;
                 PostQuitMessage(0);
                 return 0;
 
@@ -295,6 +302,7 @@ LRESULT CALLBACK LaserWindow::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPA
                 // ESC键退出程序
                 if (wparam == VK_ESCAPE) {
                     window->m_ShouldClose = true;
+                    DestroyWindow(hwnd);  // 销毁窗口
                 }
                 // 注意：0-3键的设备切换在Main.cpp的主循环中处理
                 return 0;
@@ -608,6 +616,11 @@ bool LaserWindow::ProcessMessages() {
 //   laserTexture - 激光纹理的SRV，nullptr则显示黑屏
 //==========================================================================
 void LaserWindow::DisplayLaserTexture(ID3D11ShaderResourceView* laserTexture) {
+    // 如果窗口已关闭或资源无效，直接返回（避免崩溃）
+    if (m_ShouldClose || !m_SwapChain || !m_BackBufferRTV || !m_Context) {
+        return;
+    }
+    
     // 更新 FPS 计数
     UpdateFPS();
     
@@ -739,7 +752,8 @@ void LaserWindow::UpdateFPS() {
 //   格式：基础标题 + " | FPS: xx.x"
 //==========================================================================
 void LaserWindow::UpdateWindowTitle() {
-    if (!m_hWnd) {
+    // 检查窗口句柄是否有效且窗口仍然存在
+    if (!m_hWnd || !IsWindow(m_hWnd)) {
         return;
     }
     

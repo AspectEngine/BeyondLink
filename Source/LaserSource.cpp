@@ -7,7 +7,7 @@
 //       光束检测、速度平滑和边缘淡化
 //==============================================================================
 
-#include "../include/LaserSource.h"
+#include "LaserSource.h"
 #include <algorithm>
 #include <cmath>
 

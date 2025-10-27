@@ -7,7 +7,7 @@
 //       数据包解析和设备ID识别
 //==============================================================================
 
-#include "../include/LaserProtocol.h"
+#include "LaserProtocol.h"
 #include <iostream>
 #include <cstring>
 #include <sstream>
@@ -224,7 +224,7 @@ bool LaserProtocol::JoinMulticastGroups(const std::string& localIP) {
     std::string local = localIP.empty() ? "0.0.0.0" : localIP;
     
     // 为每个设备的所有子网加入多播组
-    for (int deviceID = 0; deviceID <= m_MaxDevices; ++deviceID) {
+    for (int deviceID = 0; deviceID < m_MaxDevices; ++deviceID) {
         for (int subnetID = 0; subnetID <= 30; ++subnetID) {
             std::string multicastAddr = GetMulticastAddress(deviceID, subnetID);
             
@@ -341,20 +341,27 @@ void LaserProtocol::Stop() {
         return;
     }
     
+    std::cout << "Stopping LaserProtocol..." << std::endl;
+    
+    // 1. 首先设置停止标志
     m_Running = false;
     
-    // 等待接收线程结束
-    if (m_ReceiveThread.joinable()) {
-        m_ReceiveThread.join();
-    }
-    
-    // 离开多播组
-    LeaveMulticastGroups();
-    
-    // 关闭socket
+    // 2. 关闭socket，这会立即中断阻塞的接收调用（WSARecvMsg等）
+    //    关闭socket时，操作系统会自动离开所有多播组
+    //    这使得接收线程能够快速退出循环
     CloseSocket();
     
-    // 清理网络
+    // 3. 等待接收线程结束（现在应该很快返回，因为socket已关闭）
+    if (m_ReceiveThread.joinable()) {
+        std::cout << "Waiting for receive thread to exit..." << std::endl;
+        m_ReceiveThread.join();
+        std::cout << "Receive thread exited" << std::endl;
+    }
+    
+    // 4. 清空多播组列表（socket已关闭，无需显式离开）
+    m_JoinedGroups.clear();
+    
+    // 5. 清理Winsock
     CleanupWinsock();
     
     std::cout << "LaserProtocol stopped" << std::endl;
@@ -511,7 +518,7 @@ bool LaserProtocol::ParsePacket(const uint8_t* data, size_t length,
     m_ReadLaserData(dataCopy.data(), static_cast<int>(length));
     
     // 使用从网络层提取的设备 ID
-    if (extractedDeviceID >= 0 && extractedDeviceID < 4) {
+    if (extractedDeviceID >= 0 && extractedDeviceID < m_MaxDevices) {
         int pointCount = 0;
         void* pointDataPtr = m_GetData(extractedDeviceID, &pointCount);
         

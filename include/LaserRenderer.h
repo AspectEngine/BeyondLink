@@ -207,13 +207,14 @@ private:
     // 函数：UploadVertexData
     // 描述：上传顶点数据到 GPU 动态缓冲区
     //      使用 MAP_WRITE_DISCARD 高效更新
+    //      如果缓冲区不够大，会自动重新创建更大的缓冲区
     // 参数：
     //   points - 激光点列表
-    //   vertexBuffer - 顶点缓冲区
-    //   bufferCapacity - 缓冲区容量（如需要会扩展）
+    //   vertexBuffer - 顶点缓冲区（引用，可能会被重新创建）
+    //   bufferCapacity - 缓冲区容量（引用，扩展时会更新）
     //==========================================================================
     void UploadVertexData(const std::vector<Core::LaserPoint>& points, 
-                          ID3D11Buffer* vertexBuffer, 
+                          ID3D11Buffer*& vertexBuffer, 
                           size_t& bufferCapacity);
 
 private:

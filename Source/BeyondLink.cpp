@@ -6,7 +6,7 @@
 // 描述：BeyondLink系统的主实现文件，协调渲染器、网络协议和激光源管理
 //==============================================================================
 
-#include "../include/BeyondLink.h"
+#include "BeyondLink.h"
 #include <iostream>
 
 namespace BeyondLink {
